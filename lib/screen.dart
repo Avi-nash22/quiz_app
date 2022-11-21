@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app/constants.dart';
+import 'package:quiz_app/questions.dart';
+import 'package:quiz_app/result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({Key? key}) : super(key: key);
@@ -9,6 +11,11 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+  final PageController pageController = PageController();
+  bool isAnswerlocked = false;
+  int currentindex = 0, correctanswers = 0, wronganswers = 0;
+  String correctanswer = "", selectedanswer = "";
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +31,30 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ),
         bottomNavigationBar: InkWell(
-          onTap: () {},
+          onTap: () {
+            if (isAnswerlocked) {
+              if (selectedanswer == correctanswer) {
+                correctanswers++;
+              } else {
+                wronganswers++;
+              }
+              currentindex++;
+
+              if (currentindex != quizQuestions.length) {
+                pageController.jumpToPage(currentindex);
+              } else {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ResultScreen(
+                              correctanswer: correctanswers,
+                              wronganswer: wronganswers,
+                            )));
+              }
+            } else {
+              print("Please select an answer");
+            }
+          },
           child: Container(
             height: 70,
             alignment: Alignment.center,
@@ -39,8 +69,11 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ),
         body: PageView.builder(
-          itemCount: 10,
+          controller: pageController,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: quizQuestions.length,
           itemBuilder: (context, index) {
+            QuizQuestionModal model = quizQuestions[index];
             return Padding(
               padding: const EdgeInsets.all(15.0),
               child: Column(
@@ -51,7 +84,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      "This is a question",
+                      model.question,
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -63,22 +96,32 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                   Column(
                     children: List.generate(
-                        4,
+                        model.options.length,
                         (index) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: InkWell(
-                                onTap: () {},
+                                onTap: () {
+                                  setState(() {
+                                    isAnswerlocked = true;
+                                    selectedanswer = model.options[index];
+                                    correctanswer = model.correctanswers;
+                                  });
+                                },
                                 child: Container(
                                   width: double.infinity,
                                   height: 50,
                                   decoration: BoxDecoration(
+                                      color:
+                                          selectedanswer == model.options[index]
+                                              ? foregroundColor
+                                              : backgroundColor,
                                       border:
                                           Border.all(color: foregroundColor),
                                       borderRadius: BorderRadius.circular(10)),
                                   alignment: Alignment.centerLeft,
                                   padding: EdgeInsets.all(14),
                                   child: Text(
-                                    "Option 1",
+                                    model.options[index],
                                     style: TextStyle(color: Colors.white),
                                   ),
                                 ),
